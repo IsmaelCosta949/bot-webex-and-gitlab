@@ -4,7 +4,7 @@ Bot Node.js que recebe webhooks do GitLab e envia notificações de Merge Reques
 
 ## Visão Geral
 
-O bot atua como intermediário entre o GitLab e o Webex: ao receber um evento de MR via webhook, ele formata uma mensagem em Markdown e envia para a sala do Webex correspondente ao projeto. Eventos de release são tratados de forma especial, incluindo a descrição do MR na notificação.
+O bot atua como intermediário entre o GitLab e o Webex: ao receber um evento de MR ou de pipeline via webhook, ele formata uma mensagem em Markdown e envia para a sala do Webex correspondente ao projeto. Eventos de release são tratados de forma especial, incluindo a descrição do MR na notificação. Pipelines geram um aviso quando entram em execução (`running`), informando quem as disparou.
 
 ```
 GitLab → POST /webex-webhook → Bot → Webex API → Sala do Webex
@@ -48,7 +48,7 @@ Para adicionar novos projetos, declare `ROOM_{NOME_DO_PROJETO}` no `.env` e mape
 
 Endpoint principal. Recebe o payload JSON do GitLab e envia notificação ao Webex.
 
-Configure este URL no GitLab em **Settings → Webhooks**, marcando o evento **Merge requests**.
+Configure este URL no GitLab em **Settings → Webhooks**, marcando os eventos **Merge request events** e **Pipeline events**.
 
 ### `GET /health`
 
@@ -63,21 +63,23 @@ Envia alerta de estoque crítico de café para o `ADMIN_EMAIL`.
 ```
 Receber webhook
     │
-    ├─ object_kind ≠ "merge_request" → Ignorar
+    ├─ object_kind = "merge_request" → handleMergeRequest
+    │       ├─ MR em rascunho (Draft / WIP) → Ignorar
+    │       ├─ Branch não permitida (se configurado) → Ignorar
+    │       ├─ Projeto sem sala mapeada → Ignorar
+    │       ├─ Branch de release? (release/*) → Sim → formatReleaseMR()
+    │       ├─ action = "open"   → formatOpenMR()
+    │       ├─ action = "reopen" → formatReopenMR()
+    │       ├─ state  = "merged" → formatMergedMR()
+    │       └─ state  = "closed" → formatClosedMR()
     │
-    ├─ MR em rascunho (Draft / WIP) → Ignorar
+    ├─ object_kind = "pipeline" → handlePipeline
+    │       ├─ status ≠ "running" → Ignorar
+    │       ├─ pipeline já notificada (dedup por id) → Ignorar
+    │       ├─ Projeto sem sala mapeada → Ignorar
+    │       └─ formatPipelineRunning()
     │
-    ├─ Branch não permitida (se configurado) → Ignorar
-    │
-    ├─ Projeto sem sala mapeada → Ignorar
-    │
-    ├─ Branch de release? (release/*)
-    │       └─ Sim → formatReleaseMR()
-    │
-    ├─ action = "open"   → formatOpenMR()
-    ├─ action = "reopen" → formatReopenMR()
-    ├─ state  = "merged" → formatMergedMR()
-    ├─ state  = "closed" → formatClosedMR()
+    ├─ outro object_kind → Ignorar
     │
     └─ sendToRoom(roomId, markdown) → Webex API
 ```
@@ -93,6 +95,10 @@ Um MR é considerado rascunho se qualquer condição for verdadeira:
 ### Detecção de Release
 
 Um MR é tratado como release se a branch de origem **ou** destino corresponder ao padrão `/^release\//i`.
+
+### Notificação de Pipelines
+
+O bot avisa somente quando a pipeline entra em execução (`object_attributes.status === "running"`), informando o projeto, a branch (`ref`), quem a disparou (`event.user.username`) e o link da pipeline. Como o GitLab pode disparar vários eventos `running` para a mesma pipeline, os IDs já notificados são guardados em memória (dedup por `object_attributes.id`, com limite de 500 IDs). O estado de dedup é reiniciado ao reiniciar o processo.
 
 ## Adicionando Projetos
 
@@ -120,7 +126,8 @@ bot-webex-and-gitlab/
 ├── index.js                 # Servidor HTTP e roteamento
 ├── config.js                # Variáveis de ambiente e mapeamento de projetos
 ├── handlers/
-│   └── mergeRequest.js      # Lógica de negócio: filtra, decide sala, chama formatter
+│   ├── mergeRequest.js      # Lógica de negócio: filtra, decide sala, chama formatter
+│   └── pipeline.js          # Notificação de pipelines em execução (com dedup por id)
 ├── messages/
 │   └── formatter.js         # Funções que geram o Markdown das mensagens
 ├── services/
@@ -140,6 +147,7 @@ Todas as mensagens são formatadas em Markdown e enviadas para a sala Webex corr
 | MR reaberto   | ♻️    | `action: reopen`                           |
 | MR mergeado   | ✅    | `state: merged`                            |
 | MR fechado    | 🛑    | `state: closed`                            |
+| Pipeline em execução | 🏃 | `object_kind: pipeline` + `status: running` |
 
 Datas são exibidas no fuso horário de **São Paulo** (`America/Sao_Paulo`) no formato `DD/MM/YYYY HH:mm:ss`.
 

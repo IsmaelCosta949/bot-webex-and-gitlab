@@ -8,7 +8,15 @@ function formatDate() {
   }).format(new Date());
 }
 
-function formatOpenMR({ projectName, mrAuthor, sourceBranch, targetBranch, mrUrl, mrTitle, timestamp }) {
+function formatOpenMR({
+  projectName,
+  mrAuthor,
+  sourceBranch,
+  targetBranch,
+  mrUrl,
+  mrTitle,
+  timestamp,
+}) {
   return (
     `## 🎉 Novo Merge Request\n\n` +
     `**Projeto:** ${projectName}\n\n` +
@@ -21,7 +29,16 @@ function formatOpenMR({ projectName, mrAuthor, sourceBranch, targetBranch, mrUrl
   );
 }
 
-function formatReleaseMR({ projectName, mrAuthor, sourceBranch, targetBranch, mrUrl, mrTitle, description, timestamp }) {
+function formatReleaseMR({
+  projectName,
+  mrAuthor,
+  sourceBranch,
+  targetBranch,
+  mrUrl,
+  mrTitle,
+  description,
+  timestamp,
+}) {
   const descBlock = description?.trim()
     ? `\n---\n\n### 📋 Descrição da Release\n\n${description.trim()}\n\n---\n\n`
     : "\n\n";
@@ -39,7 +56,15 @@ function formatReleaseMR({ projectName, mrAuthor, sourceBranch, targetBranch, mr
   );
 }
 
-function formatReopenMR({ projectName, userName, sourceBranch, targetBranch, mrUrl, mrTitle, timestamp }) {
+function formatReopenMR({
+  projectName,
+  userName,
+  sourceBranch,
+  targetBranch,
+  mrUrl,
+  mrTitle,
+  timestamp,
+}) {
   return (
     `## ♻️ Merge Request Reaberto\n\n` +
     `**Projeto:** ${projectName}\n\n` +
@@ -52,7 +77,13 @@ function formatReopenMR({ projectName, userName, sourceBranch, targetBranch, mrU
   );
 }
 
-function formatMergedMR({ projectName, userName, sourceBranch, targetBranch, timestamp }) {
+function formatMergedMR({
+  projectName,
+  userName,
+  sourceBranch,
+  targetBranch,
+  timestamp,
+}) {
   return (
     `## ✅ Merge Request Concluído\n\n` +
     `**Projeto:** ${projectName}\n\n` +
@@ -63,7 +94,13 @@ function formatMergedMR({ projectName, userName, sourceBranch, targetBranch, tim
   );
 }
 
-function formatClosedMR({ projectName, userName, sourceBranch, targetBranch, timestamp }) {
+function formatClosedMR({
+  projectName,
+  userName,
+  sourceBranch,
+  targetBranch,
+  timestamp,
+}) {
   return (
     `## 🛑 Merge Request Fechado\n\n` +
     `**Projeto:** ${projectName}\n\n` +
@@ -74,6 +111,25 @@ function formatClosedMR({ projectName, userName, sourceBranch, targetBranch, tim
   );
 }
 
+function formatPipelineRunning({
+  projectName,
+  ref,
+  triggeredBy,
+  pipelineUrl,
+  timestamp,
+}) {
+  const linkBlock = pipelineUrl ? `\n\n🔗 [Ver pipeline](${pipelineUrl})` : "";
+
+  return (
+    `## 🏃 Pipeline em execução\n\n` +
+    `**Projeto:** ${projectName}\n\n` +
+    `**Branch:** \`${ref}\`\n\n` +
+    `**Disparada por:** ${triggeredBy}\n\n` +
+    `**Data:** ${timestamp}` +
+    linkBlock
+  );
+}
+
 module.exports = {
   formatDate,
   formatOpenMR,
@@ -81,4 +137,5 @@ module.exports = {
   formatReopenMR,
   formatMergedMR,
   formatClosedMR,
+  formatPipelineRunning,
 };

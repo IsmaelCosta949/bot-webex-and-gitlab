@@ -3,6 +3,7 @@ require("dotenv").config();
 
 const http = require("http");
 const { handleMergeRequest } = require("./handlers/mergeRequest");
+const { handlePipeline } = require("./handlers/pipeline");
 const { sendToAdmin } = require("./services/webex");
 const { formatDate } = require("./messages/formatter");
 const { PORT } = require("./config");
@@ -49,18 +50,23 @@ const server = http.createServer(async (req, res) => {
         return;
       }
 
-      if (event.object_kind !== "merge_request") {
+      let handler;
+      if (event.object_kind === "merge_request") {
+        handler = handleMergeRequest;
+      } else if (event.object_kind === "pipeline") {
+        handler = handlePipeline;
+      } else {
         res.writeHead(200, { "Content-Type": "text/plain" });
-        res.end("Evento ignorado (não é merge_request).");
+        res.end("Evento ignorado (object_kind não tratado).");
         return;
       }
 
       try {
-        const result = await handleMergeRequest(event);
+        const result = await handler(event);
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify(result));
       } catch (err) {
-        console.error("[Webhook] Erro ao processar MR:", err.message);
+        console.error(`[Webhook] Erro ao processar ${event.object_kind}:`, err.message);
         res.writeHead(500, { "Content-Type": "text/plain" });
         res.end("Erro interno.");
       }
