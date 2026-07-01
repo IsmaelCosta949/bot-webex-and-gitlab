@@ -32,7 +32,10 @@ async function handlePipeline(event) {
 
   const projectName = event.project?.name || "Projeto desconhecido";
   const ref = attrs.ref || "branch desconhecida";
-  const triggeredBy = event.user?.username || "Desconhecido";
+  // event.user é quem DISPAROU a pipeline — não confundir com o autor do
+  // commit/MR (event.commit.author). Preferimos o nome de exibição.
+  const triggeredBy =
+    event.user?.name || event.user?.username || "Desconhecido";
   const pipelineUrl =
     attrs.url ||
     (event.project?.web_url

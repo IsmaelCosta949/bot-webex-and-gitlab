@@ -27,7 +27,9 @@ Campos relevantes de `event`:
   `failed` | `canceled` | `skipped` | ...
 - `object_attributes.ref`: branch/tag da pipeline
 - `object_attributes.url`: URL da pipeline (pode não existir em versões antigas)
-- `user.username` / `user.name`: quem disparou a pipeline
+- `user.name` / `user.username`: quem **disparou/rodou** a pipeline (distinto do
+  autor do commit/MR, que fica em `commit.author`). Usamos `user.name`
+  (nome de exibição) com fallback para `user.username`.
 - `project.name`: nome do projeto (usado para mapear a sala)
 - `project.web_url`: usado para montar a URL da pipeline quando `url` ausente
 
@@ -61,7 +63,8 @@ Função `handlePipeline(event)`:
 4. Extrai campos:
    - `projectName = event.project?.name || "Projeto desconhecido"`
    - `ref = attrs.ref || "branch desconhecida"`
-   - `triggeredBy = event.user?.username || "Desconhecido"`
+   - `triggeredBy = event.user?.name || event.user?.username || "Desconhecido"`
+     (quem rodou a pipeline, não o autor do commit/MR)
    - `pipelineUrl = attrs.url || (event.project?.web_url ? \`${event.project.web_url}/-/pipelines/${attrs.id}\` : "")`
    - `timestamp = formatDate()`
 5. `roomId = config.getRoomForProject(projectName)`; se vazio → retorna
