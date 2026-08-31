@@ -16,6 +16,7 @@ module.exports = {
   PORT: process.env.PORT || 3000,
   WEBEX_BOT_TOKEN: process.env.WEBEX_BOT_TOKEN,
   ADMIN_EMAIL: process.env.ADMIN_EMAIL,
+  LUIS_EMAIL: process.env.LUIS_EMAIL,
   getRoomForProject,
   ALLOWED_SOURCE_PREFIXES,
   RELEASE_BRANCH_PATTERN: /^release\//i,

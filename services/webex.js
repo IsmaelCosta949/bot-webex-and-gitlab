@@ -1,5 +1,5 @@
 "use strict";
-const { WEBEX_BOT_TOKEN, ADMIN_EMAIL } = require("../config");
+const { WEBEX_BOT_TOKEN, ADMIN_EMAIL, LUIS_EMAIL } = require("../config");
 
 const WEBEX_BASE_URL = "https://webexapis.com/v1";
 
@@ -25,8 +25,23 @@ function sendToRoom(roomId, markdown) {
   return sendMessage({ roomId, markdown });
 }
 
-function sendToAdmin(text) {
-  return sendMessage({ toPersonEmail: ADMIN_EMAIL, text });
+function sendToEmail(email, text) {
+  return sendMessage({ toPersonEmail: email, text });
 }
 
-module.exports = { sendMessage, sendToRoom, sendToAdmin };
+function sendToAdmin(text) {
+  return sendToEmail(ADMIN_EMAIL, text);
+}
+
+function sendToAdmins(text) {
+  const emails = [ADMIN_EMAIL, LUIS_EMAIL].filter(Boolean);
+  return Promise.all(emails.map((email) => sendToEmail(email, text)));
+}
+
+module.exports = {
+  sendMessage,
+  sendToRoom,
+  sendToEmail,
+  sendToAdmin,
+  sendToAdmins,
+};

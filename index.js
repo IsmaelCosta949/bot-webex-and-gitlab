@@ -4,7 +4,7 @@ require("dotenv").config();
 const http = require("http");
 const { handleMergeRequest } = require("./handlers/mergeRequest");
 const { handlePipeline } = require("./handlers/pipeline");
-const { sendToAdmin } = require("./services/webex");
+const { sendToAdmin, sendToAdmins } = require("./services/webex");
 const { formatDate } = require("./messages/formatter");
 const { PORT } = require("./config");
 
@@ -23,8 +23,8 @@ const server = http.createServer(async (req, res) => {
 
   if (req.method === "GET" && req.url === "/pedirCafe") {
     try {
-      await sendToAdmin(
-        `⚠️ Estoque de café em nível crítico. Providencie a reposição. ☕`,
+      await sendToAdmins(
+        `⚠️ Alerta rápido de infraestrutura: nosso combustível oficial (o café) está no fim. Uma reposição vai garantir o deploy das entregas no ritmo certo e todo mundo motivado! ☕`,
       );
       res.writeHead(200, { "Content-Type": "text/plain" });
       res.end("Pedido de café enviado!");
@@ -66,7 +66,10 @@ const server = http.createServer(async (req, res) => {
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify(result));
       } catch (err) {
-        console.error(`[Webhook] Erro ao processar ${event.object_kind}:`, err.message);
+        console.error(
+          `[Webhook] Erro ao processar ${event.object_kind}:`,
+          err.message,
+        );
         res.writeHead(500, { "Content-Type": "text/plain" });
         res.end("Erro interno.");
       }
